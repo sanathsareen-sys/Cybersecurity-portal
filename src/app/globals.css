@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* subtle decorative styles for hero */
+.hero-heading {
+  text-shadow: 0 8px 30px rgba(14,165,233,0.12);
+}
+
+/* smooth scroll for anchor links */
+html {
+  scroll-behavior: smooth;
+}
+
+/* styled portal title */
+.portal-title {
+  background: linear-gradient(90deg, #06b6d4, #3b82f6, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+.header-icon { filter: drop-shadow(0 6px 18px rgba(59,130,246,0.18)); }
