@@ -1,17 +1,29 @@
 import { Resend } from "resend";
 import crypto from "crypto";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(request) {
   const { email, firstName } = await request.json();
 
+  const resendApiKey = process.env.RESEND_API_KEY;
+
+  if (!resendApiKey) {
+    return Response.json(
+      { ok: false, error: "Missing RESEND_API_KEY" },
+      { status: 500 }
+    );
+  }
+
+  const resend = new Resend(resendApiKey);
+
   const token = crypto.randomBytes(32).toString("hex");
 
-  const link = `${process.env.NEXT_PUBLIC_SITE_URL}/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://cybersecurity-portal-i1fk.vercel.app";
+
+  const link = `${siteUrl}/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
 
   await resend.emails.send({
-    from: process.env.FROM_EMAIL,
+    from: process.env.FROM_EMAIL || "noreply@syncmax.ca",
     to: email,
     subject: "Verify your email",
     html: `
