@@ -1,19 +1,21 @@
 import twilio from "twilio";
 
 export async function POST(request) {
-  const { phone } = await request.json();
+  const { phone, code } = await request.json();
 
   const client = twilio(
     process.env.TWILIO_ACCOUNT_SID,
     process.env.TWILIO_AUTH_TOKEN
   );
 
-  await client.verify.v2
+  const check = await client.verify.v2
     .services(process.env.TWILIO_VERIFY_SERVICE_SID)
-    .verifications.create({
+    .verificationChecks.create({
       to: phone,
-      channel: "sms",
+      code,
     });
 
-  return Response.json({ ok: true });
+  return Response.json({
+    ok: check.status === "approved",
+  });
 }

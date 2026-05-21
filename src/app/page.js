@@ -1022,12 +1022,27 @@ export default function CyberSecurityTrainingPortal() {
     setEmailLinkSent(true);
     setEmailVerified(false);
     setLoginCodeSent(false);
-    setLoginCode("");
     setEnteredLoginCode("");
     setLoginError("");
     setEmailMessage(`Verification link sent to ${companyEmail}. Click the link to verify your email.`);
     setLoginMessage("");
-    console.log("Demo email verification link for:", companyEmail);
+
+    fetch("/api/send-email-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: companyEmail,
+        firstName: firstName,
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed to send email verification');
+        const payload = await res.json();
+        if (!payload.ok) throw new Error(payload.error || 'Email service error');
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   };
 
   const verifyEmailLink = () => {
@@ -1060,28 +1075,25 @@ export default function CyberSecurityTrainingPortal() {
       return;
     }
 
-    // Generate secure 6-digit code
-    const code = String(Math.floor(100000 + Math.random() * 900000));
-
     // Call server API to send SMS (server will use Twilio if configured; otherwise mock)
     setLoginError("");
     setLoginMessage("Sending verification code...");
 
-    fetch('/api/send-sms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, code, user: `${userDetails.firstName} ${userDetails.lastName}` })
+    fetch("/api/send-sms", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: userDetails.phone,
+      }),
     })
       .then(async (res) => {
         if (!res.ok) throw new Error('Failed to send SMS');
         const payload = await res.json();
         if (payload.ok) {
-          setLoginCode(code);
           setLoginCodeSent(true);
           setEnteredLoginCode("");
           setLoginMessage(`Verification code sent to ${phone}. Enter it when prompted to continue.`);
           setEmailMessage("");
-          console.log('Sent login code:', code, 'to', phone);
         } else {
           throw new Error(payload.error || 'SMS provider error');
         }
@@ -1094,26 +1106,49 @@ export default function CyberSecurityTrainingPortal() {
   };
 
   const verifyLoginCode = () => {
-    const isValidCode =
-      loginCodeSent &&
-      (enteredLoginCode === loginCode || enteredLoginCode === "010101");
-
-    if (isValidCode) {
-      setLoggedIn(true);
-      setLoggedInEmployee(`${userDetails.firstName} ${userDetails.lastName}`);
-      setLoginError("");
-      setLoginMessage(`Logged in as ${userDetails.firstName} ${userDetails.lastName}. You may now proceed.`);
+    if (!loginCodeSent) {
+      setLoginError("Please request a login code first.");
+      setLoginMessage("");
       return;
     }
 
-    setLoggedIn(false);
-    setLoginError("Invalid login code. Please check the code and try again.");
-    setLoginMessage("");
+    if (!enteredLoginCode) {
+      setLoginError("Please enter the verification code.");
+      setLoginMessage("");
+      return;
+    }
+
+    fetch("/api/verify-sms", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: userDetails.phone,
+        code: enteredLoginCode,
+      }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Failed to verify SMS');
+        const payload = await res.json();
+        if (payload.ok) {
+          setLoggedIn(true);
+          setLoggedInEmployee(`${userDetails.firstName} ${userDetails.lastName}`);
+          setLoginError("");
+          setLoginMessage(`Logged in as ${userDetails.firstName} ${userDetails.lastName}. You may now proceed.`);
+        } else {
+          throw new Error(payload.error || 'Verification failed');
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoggedIn(false);
+        setLoginError("Invalid login code. Please check the code and try again.");
+        setLoginMessage("");
+      });
   };
 
   const startModuleTraining = (module) => {
     if (!loggedIn) {
-      setLoginError("Complete phone verification with code 010101 before starting training.");
+      setLoginError("Complete phone verification before starting training.");
       setLoginMessage("");
       return;
     }
@@ -1304,10 +1339,6 @@ export default function CyberSecurityTrainingPortal() {
                 >
                   Verify Login Code
                 </button>
-
-                <p className="mt-3 text-xs text-gray-500">
-                  Demo verification code: <span className="font-semibold">010101</span>
-                </p>
               </>
             )}
 
