@@ -1,19 +1,19 @@
 import { Resend } from "resend";
 import crypto from "crypto";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request) {
   const { email, firstName } = await request.json();
 
-  const resendApiKey = process.env.RESEND_API_KEY;
-
-  if (!resendApiKey) {
+  if (!process.env.RESEND_API_KEY) {
     return Response.json(
       { ok: false, error: "Missing RESEND_API_KEY" },
       { status: 500 }
     );
   }
 
-  const resend = new Resend(resendApiKey);
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
   const token = crypto.randomBytes(32).toString("hex");
 
