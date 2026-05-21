@@ -18,7 +18,8 @@ export async function POST(request) {
   const token = crypto.randomBytes(32).toString("hex");
 
   const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL || "https://cybersecurity-portal-i1fk.vercel.app";
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://cybersecurity-portal-i1fk.vercel.app";
 
   const link = `${siteUrl}/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
 
